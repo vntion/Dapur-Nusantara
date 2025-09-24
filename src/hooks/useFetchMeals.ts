@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getMeals } from "../utils/queries/getMeals";
 
-export default function useMeals({
+export default function useFetchMeals({
   query,
   isDisabled = true,
 }: {

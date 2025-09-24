@@ -21,9 +21,11 @@ function FavoriteMealCard({ favoriteMeal }: Props) {
       </div>
 
       <div className="p-5">
-        <h3 className="mb-3 line-clamp-2 cursor-pointer leading-snug font-semibold text-gray-800 transition-colors hover:text-orange-600">
-          {favoriteMeal.strMeal}
-        </h3>
+        <Link to={`/meal/${favoriteMeal.idMeal}`}>
+          <h3 className="mb-3 line-clamp-2 cursor-pointer leading-snug font-semibold text-gray-800 transition-colors hover:text-orange-600">
+            {favoriteMeal.strMeal}
+          </h3>
+        </Link>
 
         <div className="mb-4 flex items-center justify-between text-sm text-gray-500">
           <div className="flex items-center space-x-1">

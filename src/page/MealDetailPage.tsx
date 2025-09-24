@@ -1,51 +1,44 @@
-import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   BookOpen,
   ChefHat,
   Clock,
-  ExternalLink,
   Globe,
-  Play,
   Users,
 } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
+import BackButton from "../components/BackButton";
 import FavoriteButton from "../components/FavoriteButton";
+import IngredientsList from "../components/IngredientsList";
+import InstructionsList from "../components/InstructionsList";
 import Recommendation from "../components/Recommendation";
-import RecommendationCard from "../components/RecommendationCard";
+import SourceLinkButton from "../components/SourceLinkButton";
+import ToYoutubeButton from "../components/ToYoutubeButton";
+import useFetchMealsById from "../hooks/useFetchMealsById";
+import useFetchRecommendations from "../hooks/useFetchRecommendations";
 import Spinner from "../ui/Spinner";
 import { formatInstructions, getIngredients } from "../utils/helpers";
-import { getMealById, getMealsByCategory } from "../utils/queries/getMeals";
 
 const MealDetailPage = () => {
   const { mealId } = useParams();
-  const navigate = useNavigate();
 
   const {
     data: meal,
-    isLoading,
+    isLoading: isMealsLoading,
     isError,
     error,
-  } = useQuery({
-    queryKey: ["meal", mealId],
-    queryFn: async () => {
-      const data = await getMealById(mealId);
-      return data;
-    },
-  });
+  } = useFetchMealsById(mealId);
 
-  const { data: recommendations, isLoading: isLoadingRecommendations } =
-    useQuery({
-      queryKey: ["recommendations", meal?.strCategory],
-      queryFn: async () => {
-        if (!meal?.strCategory) return [];
-        const data = await getMealsByCategory(meal.strCategory);
-        return data.filter((item) => item.idMeal !== meal.idMeal).slice(0, 6);
-      },
-      enabled: !!meal?.strCategory,
-    });
+  const isCategoryEmpty = !!meal?.strCategory;
 
-  if (isLoading || isLoadingRecommendations) return <Spinner />;
+  const { data: recommendations, isLoading: isRecommendationLoading } =
+    useFetchRecommendations(
+      isCategoryEmpty,
+      meal?.strCategory || "",
+      meal?.idMeal || "",
+    );
+
+  if (isMealsLoading || isRecommendationLoading) return <Spinner />;
 
   if (isError || !meal)
     return <strong className="text-red-500">{error?.message && "oops"}</strong>;
@@ -56,14 +49,10 @@ const MealDetailPage = () => {
 
   return (
     <>
-      {/* Back Button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-8 flex transform items-center space-x-2 rounded-full bg-white px-6 py-3 text-gray-600 shadow-lg transition-all hover:scale-105 hover:cursor-pointer hover:text-orange-600 hover:shadow-xl"
-      >
+      <BackButton className="mb-8 flex transform items-center space-x-2 rounded-full bg-white px-6 py-3 text-gray-600 shadow-lg transition-all hover:scale-105 hover:cursor-pointer hover:text-orange-600 hover:shadow-xl">
         <ArrowLeft className="h-5 w-5" />
         <span className="font-semibold">Kembali</span>
-      </button>
+      </BackButton>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Left Column - Image & Basic Info */}
@@ -71,6 +60,7 @@ const MealDetailPage = () => {
           <div className="overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className="relative">
               <img
+                title={meal?.strMeal || ""}
                 src={meal?.strMealThumb || ""}
                 alt={meal?.strMeal || ""}
                 className="h-96 w-full object-cover lg:h-80"
@@ -140,29 +130,10 @@ const MealDetailPage = () => {
               )}
 
               {/* YouTube Button */}
-              {meal.strYoutube && (
-                <Link
-                  to={meal.strYoutube}
-                  target="_blank"
-                  className="mb-4 flex w-full transform items-center justify-center space-x-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-6 py-4 font-semibold text-white shadow-lg transition-all hover:scale-105 hover:from-red-600 hover:to-red-700"
-                >
-                  <Play className="h-5 w-5" />
-                  <span>Tonton Tutorial</span>
-                </Link>
-              )}
+              {meal.strYoutube && <ToYoutubeButton link={meal.strYoutube} />}
 
               {/* Source Link Button */}
-              <Link
-                to={
-                  meal.strSource ||
-                  `https://www.themealdb.com/meal/${meal.idMeal}`
-                }
-                target="_blank"
-                className="flex w-full transform items-center justify-center space-x-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 font-semibold text-white shadow-lg transition-all hover:scale-105 hover:from-blue-600 hover:to-blue-700"
-              >
-                <ExternalLink className="h-5 w-5" />
-                <span>Sumber Resep</span>
-              </Link>
+              {meal.strSource && <SourceLinkButton link={meal.strSource} />}
             </div>
           </div>
         </div>
@@ -183,25 +154,7 @@ const MealDetailPage = () => {
               </span>
             </div>
 
-            <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {ingredients.map((item, index) => (
-                <li
-                  key={index}
-                  className="flex items-center space-x-4 rounded-xl bg-gradient-to-r from-gray-50 to-orange-50 p-4 transition-all"
-                >
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-orange-400 to-red-400">
-                    <span className="text-sm font-bold text-white">
-                      {index + 1}
-                    </span>
-                  </div>
-                  <div className="flex-grow">
-                    <p className="font-semibold text-gray-800">
-                      {item.measure} {item.ingredient}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <IngredientsList ingredients={ingredients} />
           </div>
 
           {/* Instructions */}
@@ -213,34 +166,16 @@ const MealDetailPage = () => {
               Langkah Memasak
             </h2>
 
-            <ul className="space-y-6">
-              {steps.map((step, index) => (
-                <li key={index} className="flex space-x-4">
-                  <div className="flex-shrink-0">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-red-400 to-pink-400">
-                      <span className="font-bold text-white">{step.id}</span>
-                    </div>
-                  </div>
-                  <div className="flex-grow rounded-xl bg-gradient-to-r from-red-50 to-pink-50 p-4">
-                    <p className="leading-relaxed text-gray-700">{step.text}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <InstructionsList steps={steps} />
           </div>
         </div>
       </div>
 
       {recommendations && recommendations.length > 0 && (
-        <Recommendation category={meal.strCategory}>
-          {recommendations.map((recommendedMeal, index) => (
-            <RecommendationCard
-              key={recommendedMeal.idMeal}
-              recommendedMeal={recommendedMeal}
-              index={index}
-            />
-          ))}
-        </Recommendation>
+        <Recommendation
+          recommendations={recommendations}
+          category={meal.strCategory}
+        />
       )}
     </>
   );

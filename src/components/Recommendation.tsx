@@ -1,13 +1,14 @@
 import { ArrowRight, TrendingUp } from "lucide-react";
-import type { ReactNode } from "react";
 import { Link } from "react-router";
+import type { MealRecommendedType } from "../types/Meal";
+import RecommendationCard from "./RecommendationCard";
 
 type Props = {
-  children: ReactNode;
   category: string | null;
+  recommendations: MealRecommendedType[];
 };
 
-function Recommendation({ children, category }: Props) {
+function Recommendation({ category, recommendations }: Props) {
   return (
     <div className="mt-16">
       <div className="mb-8 text-center">
@@ -27,7 +28,13 @@ function Recommendation({ children, category }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {children}
+        {recommendations.map((recommendedMeal, index) => (
+          <RecommendationCard
+            key={recommendedMeal.idMeal}
+            recommendedMeal={recommendedMeal}
+            index={index}
+          />
+        ))}
       </div>
 
       {/* View All Button */}

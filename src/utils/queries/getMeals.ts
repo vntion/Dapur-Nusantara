@@ -20,7 +20,7 @@ export async function getMealById(id: number | string | undefined) {
   return res.data.meals[0] as MealType;
 }
 
-export async function getMealsByCategory(category: string) {
+export async function getMealsByCategory(category: MealType["strCategory"]) {
   const res = await axiosClient.get(`/filter.php?c=${category}`);
   return res.data.meals as MealRecommendedType[];
 }
